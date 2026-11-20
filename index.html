@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RASSVET-3 — Стан супутників та проходи над Клинцями</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/5.0.0/satellite.min.js"></script>
+  <style>
+    :root {
+      --bg: #080d14;
+      --panel: #101824;
+      --panel-2: #162233;
+      --panel-3: #1d2c42;
+      --border: #26364d;
+      --text: #e6edf5;
+      --muted: #8fa3ba;
+      --accent: #38bdf8;
+      --emerald: #10b981;
+      --emerald-bg: rgba(16, 185, 129, 0.16);
+      --emerald-border: rgba(16, 185, 129, 0.45);
+      --amber: #f59e0b;
+      --amber-bg: rgba(245, 158, 11, 0.15);
+      --amber-border: rgba(245, 158, 11, 0.4);
+      --red: #f87171;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(circle at top right, #101d30 0%, var(--bg) 55%);
+      color: var(--text);
+      line-height: 1.45;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10, 16, 25, 0.92);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.84rem;
+      margin-top: 3px;
+    }
+
+    .mono {
+      font-family: var(--mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 18px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+    }
+
+    .time-panel {
+      border-color: rgba(56, 189, 248, 0.42);
+      background: linear-gradient(180deg, #131f30 0%, #101824 100%);
+    }
+
+    .panel-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .time-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    input, select, button {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 9px 11px;
+      font-size: 0.88rem;
+      font-family: inherit;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.15s ease;
+    }
+
+    button:hover {
+      background: var(--panel-3);
+      border-color: var(--accent);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #05111c;
+      border: none;
+      font-weight: 700;
+    }
+
+    .btn-primary:hover {
+      background: #67cefa;
+    }
+
+    .btn-preset {
+      background: var(--emerald-bg);
+      color: #6ee7b7;
+      border: 1px solid var(--emerald-border);
+    }
+
+    .btn-preset:hover {
+      background: rgba(16, 185, 129, 0.26);
+      border-color: var(--emerald);
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      align-items: center;
+    }
+
+    .pill-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .summary-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.14);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      white-space: nowrap;
+    }
+
+    .badge.emerald {
+      background: var(--emerald-bg);
+      color: #34d399;
+      border-color: var(--emerald-border);
+    }
+
+    .badge.amber {
+      background: var(--amber-bg);
+      color: #fbbf24;
+      border-color: var(--amber-border);
+    }
+
+    .badge.muted-badge {
+      background: var(--panel-2);
+      color: var(--muted);
+      border-color: var(--border);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    th {
+      background: var(--panel-2);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr.row-above {
+      background: rgba(16, 185, 129, 0.09);
+    }
+
+    tr.row-above:hover {
+      background: rgba(16, 185, 129, 0.15);
+    }
+
+    tr.row-near {
+      background: rgba(245, 158, 11, 0.06);
+    }
+
+    tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .group-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .ga {
+      background: rgba(56, 189, 248, 0.15);
+      color: #7dd3fc;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .gb {
+      background: rgba(52, 211, 153, 0.15);
+      color: #6ee7b7;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+
+    .gc {
+      background: rgba(251, 191, 36, 0.14);
+      color: #fcd34d;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+      gap: 14px;
+    }
+
+    .group-card {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .sat-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .sat-chip {
+      font-size: 0.76rem;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 7px;
+      font-family: var(--mono);
+    }
+
+    .sat-chip.stale {
+      border-color: var(--amber-border);
+      color: #fbbf24;
+    }
+
+    .collapsible-body[hidden] {
+      display: none;
+    }
+
+    .tle-pre {
+      margin: 12px 0 0;
+      padding: 12px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 0.77rem;
+      line-height: 1.45;
+      overflow-x: auto;
+      white-space: pre;
+      color: var(--muted);
+    }
+
+    .muted { color: var(--muted); }
+    .small { font-size: 0.8rem; }
+
+    .observer-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      align-items: center;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>RASSVET-3 / RASSVET-2 — Орбітальний моніторинг над Клинцями</h1>
+      <div class="subtitle">Точка: <span class="mono">52.7528° N, 32.2361° E</span> (висота 150 м) · Модель SGP4 (<span class="mono">satellite.js</span>) · 25 апаратів</div>
+    </div>
+    <div id="utcClockBadge" class="badge mono">UTC: —</div>
+  </header>
+
+  <main class="container">
+    <!-- 1. Панель керування датою, часом та часовим поясом -->
+    <section class="card time-panel">
+      <div class="panel-top">
+        <div>
+          <h2 class="card-title">Вибір моменту часу для перевірки положення</h2>
+          <div class="small muted">Оберіть дату, час та часовий пояс — таблиця нижче миттєво покаже, які супутники були над горизонтом</div>
+        </div>
+        <span id="modeBadge" class="badge emerald">Режим: Фіксований час</span>
+      </div>
+
+      <div class="time-grid">
+        <label>
+          Дата та час
+          <input id="dtInput" type="datetime-local" value="2026-11-20T06:22" step="60" />
+        </label>
+
+        <label>
+          Часовий пояс введеного часу
+          <select id="tzSelect">
+            <option value="3" selected>UTC+3 (Клинці / MSK)</option>
+            <option value="2">UTC+2 (Київ, зима)</option>
+            <option value="0">UTC (Всесвітній час)</option>
+          </select>
+        </label>
+
+        <label>
+          Фільтр групи
+          <select id="groupSelect">
+            <option value="all">Усі групи (25 апаратів)</option>
+            <option value="A">Кластер А · RAAN ~98.6°–100.1° (9)</option>
+            <option value="B">Кластер Б · RAAN ~207.5°–215.7° (6)</option>
+            <option value="C">Інші / швидкі / старі епохи (10)</option>
+          </select>
+        </label>
+
+        <button id="applyTimeBtn" class="btn-primary" type="button">Розрахувати стан</button>
+      </div>
+
+      <div class="btn-row">
+        <button id="preset0622Btn" class="btn-preset" type="button">Сьогодні 06:22 (20.11.2026)</button>
+        <button id="minus1hBtn" type="button">-1 год</button>
+        <button id="plus1hBtn" type="button">+1 год</button>
+        <button id="minus5mBtn" type="button">-5 хв</button>
+        <button id="plus5mBtn" type="button">+5 хв</button>
+        <button id="liveNowBtn" type="button">Зараз (Live)</button>
+      </div>
+
+      <div class="observer-bar small muted">
+        <div id="resolvedTimeInfo" class="mono">Обраний момент: 20.11.2026 06:22:00 (UTC+3) → 2026-11-20 03:22:00 UTC</div>
+        <div>Координати спостерігача: <span class="mono">52.7528° N, 32.2361° E</span></div>
+      </div>
+    </section>
+
+    <!-- 2. Таблиця миттєвого стану супутників -->
+    <section class="card">
+      <div class="pill-bar">
+        <div>
+          <h2 class="card-title">Стан супутників на обраний момент часу</h2>
+          <div class="small muted">Відсортовано за кутом місця (El) від найвищих над горизонтом до найнижчих</div>
+        </div>
+
+        <div class="summary-stats">
+          <span id="aboveCountBadge" class="badge emerald">Над горизонтом: 0</span>
+          <span id="nearCountBadge" class="badge amber">Поблизу горизонту (-15°..0°): 0</span>
+          <button id="onlyAboveToggleBtn" type="button">Тільки над горизонтом (El &gt; 0°)</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Апарат / NORAD</th>
+              <th>Група (площина)</th>
+              <th>Статус</th>
+              <th>Кут місця (El)</th>
+              <th>Азимут (Az)</th>
+              <th>Відстань</th>
+              <th>Підсупутникова точка</th>
+              <th>Епоха TLE</th>
+            </tr>
+          </thead>
+          <tbody id="snapshotBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3. Спойлер: Найближчі проходи над точкою (±12 год від обраного часу) -->
+    <section class="card">
+      <div class="panel-top" style="margin-bottom: 0;">
+        <div>
+          <h2 class="card-title">Найближчі проходи над точкою (вікно ±12 год від обраного часу)</h2>
+          <div class="small muted">Розрахунок входу (AOS &gt; 0°), кульмінації (TCA) та виходу (LOS &lt; 0°) над Клинцями</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span id="passesCountBadge" class="badge emerald">0 проходів</span>
+          <button id="togglePassesBtn" type="button" aria-expanded="false" aria-controls="passesSpoiler">
+            Показати список
+          </button>
+        </div>
+      </div>
+
+      <div id="passesSpoiler" class="collapsible-body" hidden style="margin-top: 14px;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Апарат / NORAD</th>
+                <th>Група</th>
+                <th>Вхід (AOS &gt; 0°)</th>
+                <th>Кульмінація (TCA / Макс. El)</th>
+                <th>Вихід (LOS &lt; 0°)</th>
+                <th>Епоха TLE</th>
+              </tr>
+            </thead>
+            <tbody id="passesBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Орбітальні групи (Кластер А, Кластер Б, Інші) -->
+    <section class="card">
+      <div class="panel-top">
+        <div>
+          <h2 class="card-title">Орбітальні групи (Кластер А, Кластер Б, Інші)</h2>
+          <div class="small muted">Розподіл за прямим сходженням висхідного вузла (RAAN), нахилом та свіжістю епохи</div>
+        </div>
+      </div>
+      <div id="groupsGrid" class="grid-3"></div>
+    </section>
+
+    <!-- 5. Спойлер: Довідка та сирі дані TLE -->
+    <section class="card">
+      <div class="panel-top" style="margin-bottom: 0;">
+        <div>
+          <h2 class="card-title">Довідка та сирі дані TLE (25 наборів)</h2>
+          <div class="small muted">Повний перелік TLE-рядків, використаних у розрахунках SGP4</div>
+        </div>
+        <button id="toggleBottomBtn" type="button" aria-expanded="false" aria-controls="bottomSpoiler">
+          Розгорнути
+        </button>
+      </div>
+
+      <div id="bottomSpoiler" class="collapsible-body" hidden style="margin-top: 12px;">
+        <div class="small muted">
+          Примітка: апарати з епохою <span class="mono">26323–26324</span> (19–20 листопада 2026) мають найвищу точність прогнозу на ранок 20 листопада. Апарати з давнішими епохами (<span class="mono">26234–26318</span>) позначені як «стара епоха» — для них можливий зсув фази витка.
+        </div>
+        <pre id="rawTlePre" class="tle-pre"></pre>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const OBSERVER = {
+      lat: 52.7528,
+      lon: 32.2361,
+      altKm: 0.15
+    };
+
+    const SATELLITES = [
+      // Кластер А: RAAN ~98.6°–100.1° (9 апаратів)
+      {
+        name: "RASSVET-3 19",
+        norad: "100085",
+        group: "A",
+        line1: "1 A0085U 26165C   26324.33434476 .00007948 00000-0 37631-3 0  9995",
+        line2: "2 A0085  82.2958  99.2460 0002043  88.3619 271.7849 15.19201644 19116"
+      },
+      {
+        name: "RASSVET-3 20",
+        norad: "100086",
+        group: "A",
+        line1: "1 A0086U 26165D   26323.88189041 .00004243 00000-0 19997-3 0  9990",
+        line2: "2 A0086  82.2969  98.9364 0001900 110.1472 249.9966 15.19255480 19091"
+      },
+      {
+        name: "RASSVET-3 21",
+        norad: "100087",
+        group: "A",
+        line1: "1 A0087U 26165E   26323.89063239 .00005590 00000-0 26508-3 0  9994",
+        line2: "2 A0087  82.2967  98.6276 0002586 108.6572 251.4943 15.19100067 19119"
+      },
+      {
+        name: "RASSVET-3 24",
+        norad: "100090",
+        group: "A",
+        line1: "1 A0090U 26165H   26324.20914198 .00007946 00000-0 37643-3 0  9992",
+        line2: "2 A0090  82.2970  99.2463 0000607  78.1785 281.9517 15.19182389 19102"
+      },
+      {
+        name: "RASSVET-3 25",
+        norad: "100091",
+        group: "A",
+        line1: "1 A0091U 26165J   26323.88837897 .00003468 00000-0 16358-3 0  9991",
+        line2: "2 A0091  82.2962  98.9389 0001799 117.8593 242.2824 15.19170723 19096"
+      },
+      {
+        name: "RASSVET-3 28",
+        norad: "100094",
+        group: "A",
+        line1: "1 A0094U 26165M   26323.88627206 .00004118 00000-0 19452-3 0  9996",
+        line2: "2 A0094  82.2956  98.7677 0001294 112.0148 248.1223 15.19173640 19104"
+      },
+      {
+        name: "RASSVET-3 29",
+        norad: "100095",
+        group: "A",
+        line1: "1 A0095U 26165N   26324.32580024 .00003156 00000-0 14869-3 0  9991",
+        line2: "2 A0095  82.2975 100.0442 0004404  69.4751 290.6955 15.19170153 19069"
+      },
+      {
+        name: "RASSVET-3 30",
+        norad: "100096",
+        group: "A",
+        line1: "1 A0096U 26165P   26323.86902617 .00006131 00000-0 29005-3 0  9990",
+        line2: "2 A0096  82.2978 100.0525 0002909  75.2092 284.9464 15.19193239 19023"
+      },
+      {
+        name: "RASSVET-3 32",
+        norad: "100098",
+        group: "A",
+        line1: "1 A0098U 26165R   26324.26209590 .00003155 00000-0 14876-3 0  9990",
+        line2: "2 A0098  82.2954  99.2797 0002543  83.7632 276.3892 15.19152125 19105"
+      },
+
+      // Кластер Б: RAAN ~207.5°–215.7° (6 апаратів)
+      {
+        name: "RASSVET-3 6",
+        norad: "68365",
+        group: "B",
+        line1: "1 68365U 26061F   26324.18164189 .00004230 00000-0 20548-3 0  9999",
+        line2: "2 68365  82.2950 215.6613 0001191 143.4753 216.6561 15.18206600 37083"
+      },
+      {
+        name: "RASSVET-3 8",
+        norad: "68367",
+        group: "B",
+        line1: "1 68367U 26061H   26323.86500499 .00005678 00000-0 27059-3 0  9994",
+        line2: "2 68367  82.2925 212.7498 0001483 106.2765 253.8632 15.18928570 37236"
+      },
+      {
+        name: "RASSVET-3 10",
+        norad: "68369",
+        group: "B",
+        line1: "1 68369U 26061K   26323.93558096 .00012075 00000-0 57253-3 0  9998",
+        line2: "2 68369  82.2868 207.5550 0003460  93.1537 267.0092 15.19176796 37562"
+      },
+      {
+        name: "RASSVET-3 12",
+        norad: "68371",
+        group: "B",
+        line1: "1 68371U 26061M   26324.25162564 .00003896 00000-0 18652-3 0  9999",
+        line2: "2 68371  82.2955 215.5984 0000933 161.2823 198.8445 15.18688920 37096"
+      },
+      {
+        name: "RASSVET-3 15",
+        norad: "68374",
+        group: "B",
+        line1: "1 68374U 26061Q   26323.92937017 .00003664 00000-0 17141-3 0  9993",
+        line2: "2 68374  82.2956 212.4288 0003440  96.7601 263.4025 15.19465843 37265"
+      },
+      {
+        name: "RASSVET-3 16",
+        norad: "68375",
+        group: "B",
+        line1: "1 68375U 26061R   26323.92462296 .00003492 00000-0 16473-3 0  9992",
+        line2: "2 68375  82.2933 213.4902 0001880 123.3183 236.8231 15.19168887 37196"
+      },
+
+      // Інші / швидкі орбіти або старі епохи (10 апаратів)
+      {
+        name: "RASSVET-3 1",
+        norad: "68360",
+        group: "C",
+        line1: "1 68360U 26061A   26318.91174922 .00002718 00000-0 12291-3 0  9999",
+        line2: "2 68360  82.2914 218.3605 0000539 165.8103 194.3147 15.20533394 36448"
+      },
+      {
+        name: "RASSVET-3 2",
+        norad: "68361",
+        group: "C",
+        line1: "1 68361U 26061B   26270.23975669 .00000000 00000-0 00000-0 0  9999",
+        line2: "2 68361  82.2879 266.6276 0002653 00000-0 00000-0 15.18819062 00000"
+      },
+      {
+        name: "RASSVET-3 3",
+        norad: "68362",
+        group: "C",
+        line1: "1 68362U 26061C   26295.84621929 .00003760 00000-0 17972-3 0  9990",
+        line2: "2 68362  82.2945 244.0655 0003563 125.4360 234.7207 15.18729336 32815"
+      },
+      {
+        name: "RASSVET-3 5",
+        norad: "68364",
+        group: "C",
+        line1: "1 68364U 26061E   26318.25332048 .00002269 00000-0 10891-3 0  9990",
+        line2: "2 68364  82.2971 222.0776 0000488 226.5683 133.5510 15.18406757 36164"
+      },
+      {
+        name: "RASSVET-3 11",
+        norad: "68370",
+        group: "C",
+        line1: "1 68370U 26061L   26324.24452529 .00002696 00000-0 10077-3 0  9990",
+        line2: "2 68370  82.2905 202.8518 0002265 136.7582 223.3834 15.26930211 37886"
+      },
+      {
+        name: "RASSVET-3 14",
+        norad: "68373",
+        group: "C",
+        line1: "1 68373U 26061P   26324.21460081 .00041590 00000-0 25889-3 0  9995",
+        line2: "2 68373  82.2890 199.6010 0005342 261.8543  98.2116 15.76741555 38089"
+      },
+      {
+        name: "RASSVET-3 18",
+        norad: "100084",
+        group: "C",
+        line1: "1 A0084U 26165B   26266.59262525 -.00321145 00000-0 -63113-2 0  9994",
+        line2: "2 A0084  82.2994 158.3240 0007013 157.1153 203.0411 15.48428267 10330"
+      },
+      {
+        name: "RASSVET-3 22",
+        norad: "100088",
+        group: "C",
+        line1: "1 A0088U 26165F   26306.61255614 .00001738 00000-0 81891-4 0  9993",
+        line2: "2 A0088  82.2948 117.6231 0001070 133.6910 226.4413 15.18898383 16400"
+      },
+      {
+        name: "RASSVET-3 27",
+        norad: "100093",
+        group: "C",
+        line1: "1 A0093U 26165L   26234.78667001 -.00042046 00000-0 -21410-3 0  9993",
+        line2: "2 A0093  82.2992 192.8223 0003088 325.4797  34.6269 15.81511770 5370"
+      },
+      {
+        name: "RASSVET-3 31",
+        norad: "100097",
+        group: "C",
+        line1: "1 A0097U 26165Q   26269.85061973 -.00450467 00000-0 -12132-1 0  9998",
+        line2: "2 A0097  82.2986 154.7550 0007318 277.0304  83.0109 15.39597401 10840"
+      },
+      {
+        name: "RASSVET-2-1",
+        norad: "59779",
+        group: "C",
+        line1: "1 59779U 24092G   26324.33389314 .00000127 00000-0 63877-4 0  9990",
+        line2: "2 59779  98.6873  83.3626 0012969 108.2383 252.0212 14.31892491 131247"
+      }
+    ];
+
+    const GROUP_INFO = {
+      A: {
+        title: "Кластер А (RAAN ~98.6°–100.1°)",
+        tag: "Кластер А",
+        badge: "9 апаратів · свіжі епохи",
+        desc: "Основна площина запуску 2026-165. Стабільний нахил ~82.30°, темп ~15.19 об/добу (період ~94.79 хв)."
+      },
+      B: {
+        title: "Кластер Б (RAAN ~207.5°–215.7°)",
+        tag: "Кластер Б",
+        badge: "6 апаратів · свіжі епохи",
+        desc: "Основна площина запуску 2026-061. Розвернута відносно Кластера А на ~110°–116°, дає окремі вікна проходів."
+      },
+      C: {
+        title: "Інші / швидкі орбіти / старі епохи",
+        tag: "Інші",
+        badge: "10 апаратів",
+        desc: "Апарати зі старішими епохами (26234–26318), зміненим темпом обертання (3-11, 3-14) або іншою орбітою (RASSVET-2-1)."
+      }
+    };
+
+    let onlyAbove = false;
+    let isLive = false;
+    let liveTimer = null;
+
+    function parseTleMeta(sat) {
+      const epochStr = sat.line1.slice(18, 32).trim();
+      const epochDay = parseFloat(epochStr);
+      const inc = parseFloat(sat.line2.slice(8, 16).trim());
+      const raan = parseFloat(sat.line2.slice(17, 25).trim());
+      const mm = parseFloat(sat.line2.slice(52, 63).trim());
+      const isFresh = epochDay >= 26323.0;
+      return { epochStr, epochDay, inc, raan, mm, isFresh };
+    }
+
+    function getSelectedDateUtc() {
+      const val = document.getElementById("dtInput").value;
+      const tzOffsetHours = parseFloat(document.getElementById("tzSelect").value) || 0;
+      if (!val) return new Date();
+
+      const [datePart, timePart] = val.split("T");
+      const [y, m, d] = datePart.split("-").map(Number);
+      const [hh, mm] = timePart.split(":").map(Number);
+      const utcMs = Date.UTC(y, m - 1, d, hh, mm, 0) - tzOffsetHours * 3600 * 1000;
+      return new Date(utcMs);
+    }
+
+    function setInputFromUtc(utcDate) {
+      const tzOffsetHours = parseFloat(document.getElementById("tzSelect").value) || 0;
+      const shifted = new Date(utcDate.getTime() + tzOffsetHours * 3600 * 1000);
+      const yyyy = shifted.getUTCFullYear();
+      const mm = String(shifted.getUTCMonth() + 1).padStart(2, "0");
+      const dd = String(shifted.getUTCDate()).padStart(2, "0");
+      const hh = String(shifted.getUTCHours()).padStart(2, "0");
+      const min = String(shifted.getUTCMinutes()).padStart(2, "0");
+      document.getElementById("dtInput").value = `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+    }
+
+    function formatInSelectedTz(utcDate) {
+      const tzOffsetHours = parseFloat(document.getElementById("tzSelect").value) || 0;
+      const shifted = new Date(utcDate.getTime() + tzOffsetHours * 3600 * 1000);
+      const dd = String(shifted.getUTCDate()).padStart(2, "0");
+      const mm = String(shifted.getUTCMonth() + 1).padStart(2, "0");
+      const yyyy = shifted.getUTCFullYear();
+      const hh = String(shifted.getUTCHours()).padStart(2, "0");
+      const min = String(shifted.getUTCMinutes()).padStart(2, "0");
+      const ss = String(shifted.getUTCSeconds()).padStart(2, "0");
+      return `${dd}.${mm}.${yyyy} ${hh}:${min}:${ss}`;
+    }
+
+    function formatUtcIso(utcDate) {
+      return utcDate.toISOString().replace("T", " ").slice(0, 19) + " UTC";
+    }
+
+    function azimuthDirection(az) {
+      const dirs = ["Пн", "ПнСх", "Сх", "ПдСх", "Пд", "ПдЗх", "Зх", "ПнЗх"];
+      return dirs[Math.round(az / 45) % 8];
+    }
+
+    function renderGroupCards() {
+      const container = document.getElementById("groupsGrid");
+      container.innerHTML = ["A", "B", "C"].map((gKey) => {
+        const info = GROUP_INFO[gKey];
+        const items = SATELLITES.filter((s) => s.group === gKey);
+        return `
+          <div class="group-card">
+            <div class="panel-top" style="margin-bottom: 6px;">
+              <strong style="font-size: 0.93rem;">${info.title}</strong>
+              <span class="badge">${info.badge}</span>
+            </div>
+            <div class="small muted">${info.desc}</div>
+            <div class="sat-chips">
+              ${items.map((s) => {
+                const meta = parseTleMeta(s);
+                return `<span class="sat-chip ${meta.isFresh ? "" : "stale"}" title="RAAN ${meta.raan.toFixed(2)}° · Inc ${meta.inc.toFixed(2)}° · MM ${meta.mm.toFixed(4)}">
+                  ${s.name} · ${meta.epochStr.slice(0, 5)}
+                </span>`;
+              }).join("")}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function computeSnapshotAndPasses() {
+      if (!window.satellite) {
+        document.getElementById("utcClockBadge").textContent = "Помилка satellite.js";
+        return;
+      }
+
+      const targetUtc = getSelectedDateUtc();
+      const tzOffsetHours = parseFloat(document.getElementById("tzSelect").value) || 0;
+      const tzLabel = tzOffsetHours === 0 ? "UTC" : `UTC+${tzOffsetHours}`;
+      const groupFilter = document.getElementById("groupSelect").value;
+
+      document.getElementById("utcClockBadge").textContent = formatUtcIso(targetUtc);
+      document.getElementById("resolvedTimeInfo").textContent =
+        `Обраний момент: ${formatInSelectedTz(targetUtc)} (${tzLabel}) → ${formatUtcIso(targetUtc)}`;
+
+      const observerGd = {
+        latitude: satellite.degreesToRadians(OBSERVER.lat),
+        longitude: satellite.degreesToRadians(OBSERVER.lon),
+        height: OBSERVER.altKm
+      };
+
+      const gmst = satellite.gstime(targetUtc);
+      const filteredSats = SATELLITES.filter((s) => groupFilter === "all" || s.group === groupFilter);
+
+      const snapshotRows = [];
+
+      for (const sat of filteredSats) {
+        const satrec = satellite.twoline2satrec(sat.line1, sat.line2);
+        const pv = satellite.propagate(satrec, targetUtc);
+        if (!pv.position) continue;
+
+        const posEcf = satellite.eciToEcf(pv.position, gmst);
+        const look = satellite.ecfToLookAngles(observerGd, posEcf);
+        const geo = satellite.eciToGeodetic(pv.position, gmst);
+
+        const elDeg = satellite.radiansToDegrees(look.elevation);
+        const azDeg = (satellite.radiansToDegrees(look.azimuth) + 360) % 360;
+        const distKm = look.rangeSat;
+        const subLat = satellite.radiansToDegrees(geo.latitude);
+        const subLon = satellite.radiansToDegrees(geo.longitude);
+        const meta = parseTleMeta(sat);
+
+        snapshotRows.push({
+          sat,
+          meta,
+          elDeg,
+          azDeg,
+          distKm,
+          subLat,
+          subLon
+        });
+      }
+
+      snapshotRows.sort((a, b) => b.elDeg - a.elDeg);
+
+      const aboveCount = snapshotRows.filter((r) => r.elDeg > 0).length;
+      const nearCount = snapshotRows.filter((r) => r.elDeg <= 0 && r.elDeg > -15).length;
+
+      document.getElementById("aboveCountBadge").textContent = `Над горизонтом: ${aboveCount}`;
+      document.getElementById("nearCountBadge").textContent = `Поблизу горизонту (-15°..0°): ${nearCount}`;
+
+      const visibleRows = onlyAbove ? snapshotRows.filter((r) => r.elDeg > 0) : snapshotRows;
+      const tbody = document.getElementById("snapshotBody");
+
+      if (visibleRows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="muted">На обраний момент жоден апарат із вибраної групи не перебуває вище 0° над горизонтом Клинців. Натисніть «Тільки над горизонтом», щоб побачити всі 25.</td></tr>`;
+      } else {
+        tbody.innerHTML = visibleRows.map((r) => {
+          const isAbove = r.elDeg > 0;
+          const isNear = !isAbove && r.elDeg > -15;
+          const rowClass = isAbove ? "row-above" : isNear ? "row-near" : "";
+          const statusBadge = isAbove
+            ? `<span class="badge emerald">НАД ГОРИЗОНТОМ</span>`
+            : isNear
+              ? `<span class="badge amber">Біля горизонту</span>`
+              : `<span class="badge muted-badge">Під горизонтом</span>`;
+
+          const gClass = r.sat.group === "A" ? "ga" : r.sat.group === "B" ? "gb" : "gc";
+          const gLabel = GROUP_INFO[r.sat.group].tag;
+
+          const epochBadge = r.meta.isFresh
+            ? `<span class="badge emerald">свіжа · ${r.meta.epochStr.slice(0, 8)}</span>`
+            : `<span class="badge amber">стара · ${r.meta.epochStr.slice(0, 8)}</span>`;
+
+          return `
+            <tr class="${rowClass}">
+              <td><strong>${r.sat.name}</strong> <span class="muted mono small">(${r.sat.norad})</span></td>
+              <td><span class="group-tag ${gClass}">${gLabel}</span></td>
+              <td>${statusBadge}</td>
+              <td class="mono"><strong>${r.elDeg >= 0 ? "+" : ""}${r.elDeg.toFixed(1)}°</strong></td>
+              <td class="mono">${r.azDeg.toFixed(0)}° <span class="muted">(${azimuthDirection(r.azDeg)})</span></td>
+              <td class="mono">${Math.round(r.distKm).toLocaleString("uk-UA")} км</td>
+              <td class="mono small">${r.subLat.toFixed(2)}° N, ${r.subLon.toFixed(2)}° E</td>
+              <td>${epochBadge}</td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      // Розрахунок проходів у вікні ±12 год від обраного часу (AOS > 0°, TCA, LOS < 0°)
+      const windowHalfMs = 12 * 3600 * 1000;
+      const startMs = targetUtc.getTime() - windowHalfMs;
+      const endMs = targetUtc.getTime() + windowHalfMs;
+      const stepMs = 20 * 1000;
+      const passes = [];
+
+      for (const sat of filteredSats) {
+        const satrec = satellite.twoline2satrec(sat.line1, sat.line2);
+        const meta = parseTleMeta(sat);
+        let inPass = false;
+        let aos = null;
+        let tca = null;
+        let maxEl = -90;
+        let prevDate = null;
+
+        for (let t = startMs; t <= endMs; t += stepMs) {
+          const dt = new Date(t);
+          const pv = satellite.propagate(satrec, dt);
+          if (!pv.position) {
+            prevDate = dt;
+            continue;
+          }
+          const g = satellite.gstime(dt);
+          const ecf = satellite.eciToEcf(pv.position, g);
+          const look = satellite.ecfToLookAngles(observerGd, ecf);
+          const elDeg = satellite.radiansToDegrees(look.elevation);
+
+          if (elDeg > 0) {
+            if (!inPass) {
+              inPass = true;
+              aos = prevDate || dt;
+              maxEl = elDeg;
+              tca = dt;
+            } else if (elDeg > maxEl) {
+              maxEl = elDeg;
+              tca = dt;
+            }
+          } else if (inPass) {
+            passes.push({ sat, meta, aos, tca, los: dt, maxEl });
+            inPass = false;
+            aos = null;
+            tca = null;
+            maxEl = -90;
+          }
+          prevDate = dt;
+        }
+
+        if (inPass && aos) {
+          passes.push({ sat, meta, aos, tca: tca || new Date(endMs), los: new Date(endMs), maxEl });
+        }
+      }
+
+      passes.sort((a, b) => a.tca - b.tca);
+      document.getElementById("passesCountBadge").textContent = `${passes.length} проходів`;
+
+      const passesBody = document.getElementById("passesBody");
+      if (passes.length === 0) {
+        passesBody.innerHTML = `<tr><td colspan="6" class="muted">У вікні ±12 годин проходів вище 0° для обраної групи не знайдено.</td></tr>`;
+      } else {
+        passesBody.innerHTML = passes.map((p) => {
+          const gClass = p.sat.group === "A" ? "ga" : p.sat.group === "B" ? "gb" : "gc";
+          const gLabel = GROUP_INFO[p.sat.group].tag;
+          const isNearTarget = Math.abs(p.tca.getTime() - targetUtc.getTime()) <= 15 * 60 * 1000;
+
+          return `
+            <tr class="${isNearTarget ? "row-above" : ""}">
+              <td><strong>${p.sat.name}</strong> <span class="muted mono small">(${p.sat.norad})</span></td>
+              <td><span class="group-tag ${gClass}">${gLabel}</span></td>
+              <td class="mono">${formatInSelectedTz(p.aos)}</td>
+              <td class="mono"><strong>${p.maxEl.toFixed(1)}°</strong> · ${formatInSelectedTz(p.tca)}</td>
+              <td class="mono">${formatInSelectedTz(p.los)}</td>
+              <td>${p.meta.isFresh ? `<span class="badge emerald">свіжа · ${p.meta.epochStr.slice(0, 5)}</span>` : `<span class="badge amber">стара · ${p.meta.epochStr.slice(0, 5)}</span>`}</td>
+            </tr>
+          `;
+        }).join("");
+      }
+    }
+
+    function stopLiveMode() {
+      isLive = false;
+      if (liveTimer) {
+        clearInterval(liveTimer);
+        liveTimer = null;
+      }
+      const badge = document.getElementById("modeBadge");
+      badge.textContent = "Режим: Фіксований час";
+      badge.className = "badge emerald";
+    }
+
+    function startLiveMode() {
+      stopLiveMode();
+      isLive = true;
+      const badge = document.getElementById("modeBadge");
+      badge.textContent = "Режим: Live (оновлення що 5 с)";
+      badge.className = "badge";
+      setInputFromUtc(new Date());
+      computeSnapshotAndPasses();
+      liveTimer = setInterval(() => {
+        setInputFromUtc(new Date());
+        computeSnapshotAndPasses();
+      }, 5000);
+    }
+
+    function shiftSelectedMinutes(deltaMinutes) {
+      stopLiveMode();
+      const currentUtc = getSelectedDateUtc();
+      const shifted = new Date(currentUtc.getTime() + deltaMinutes * 60 * 1000);
+      setInputFromUtc(shifted);
+      computeSnapshotAndPasses();
+    }
+
+    // Події керування часом і фільтрами
+    document.getElementById("applyTimeBtn").addEventListener("click", () => {
+      stopLiveMode();
+      computeSnapshotAndPasses();
+    });
+
+    document.getElementById("dtInput").addEventListener("change", () => {
+      stopLiveMode();
+      computeSnapshotAndPasses();
+    });
+
+    document.getElementById("tzSelect").addEventListener("change", () => {
+      if (isLive) {
+        setInputFromUtc(new Date());
+      }
+      computeSnapshotAndPasses();
+    });
+
+    document.getElementById("groupSelect").addEventListener("change", computeSnapshotAndPasses);
+
+    document.getElementById("preset0622Btn").addEventListener("click", () => {
+      stopLiveMode();
+      document.getElementById("dtInput").value = "2026-11-20T06:22";
+      computeSnapshotAndPasses();
+    });
+
+    document.getElementById("minus1hBtn").addEventListener("click", () => shiftSelectedMinutes(-60));
+    document.getElementById("plus1hBtn").addEventListener("click", () => shiftSelectedMinutes(60));
+    document.getElementById("minus5mBtn").addEventListener("click", () => shiftSelectedMinutes(-5));
+    document.getElementById("plus5mBtn").addEventListener("click", () => shiftSelectedMinutes(5));
+    document.getElementById("liveNowBtn").addEventListener("click", startLiveMode);
+
+    document.getElementById("onlyAboveToggleBtn").addEventListener("click", (e) => {
+      onlyAbove = !onlyAbove;
+      e.currentTarget.textContent = onlyAbove ? "Показати всі 25" : "Тільки над горизонтом (El > 0°)";
+      e.currentTarget.className = onlyAbove ? "btn-primary" : "";
+      computeSnapshotAndPasses();
+    });
+
+    // Спойлери
+    const togglePassesBtn = document.getElementById("togglePassesBtn");
+    const passesSpoiler = document.getElementById("passesSpoiler");
+    togglePassesBtn.addEventListener("click", () => {
+      const expanded = togglePassesBtn.getAttribute("aria-expanded") === "true";
+      togglePassesBtn.setAttribute("aria-expanded", String(!expanded));
+      togglePassesBtn.textContent = expanded ? "Показати список" : "Приховати список";
+      passesSpoiler.hidden = expanded;
+    });
+
+    const toggleBottomBtn = document.getElementById("toggleBottomBtn");
+    const bottomSpoiler = document.getElementById("bottomSpoiler");
+    toggleBottomBtn.addEventListener("click", () => {
+      const expanded = toggleBottomBtn.getAttribute("aria-expanded") === "true";
+      toggleBottomBtn.setAttribute("aria-expanded", String(!expanded));
+      toggleBottomBtn.textContent = expanded ? "Розгорнути" : "Згорнути";
+      bottomSpoiler.hidden = expanded;
+    });
+
+    // Заповнення сирих TLE у нижньому спойлері
+    document.getElementById("rawTlePre").textContent = SATELLITES.map(
+      (s) => `${s.name} (NORAD ${s.norad}) [${GROUP_INFO[s.group].tag}]\n${s.line1}\n${s.line2}`
+    ).join("\n\n");
+
+    renderGroupCards();
+    computeSnapshotAndPasses();
+  </script>
+</body>
+</html>
